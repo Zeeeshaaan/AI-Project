@@ -1,9 +1,16 @@
 import pandas as pd
+import re
 
-# Load dataset
+# =========================
+# LOAD DATASET
+# =========================
+
 data = pd.read_csv("../dataset/dataset.csv")
 
-# Select useful columns
+# =========================
+# SELECT IMPORTANT COLUMNS
+# =========================
+
 data = data[[
     'track_name',
     'artists',
@@ -15,10 +22,52 @@ data = data[[
     'popularity'
 ]]
 
-# Remove missing values
+# =========================
+# REMOVE NULL VALUES
+# =========================
+
 data.dropna(inplace=True)
 
-# Mood labeling function
+# =========================
+# REMOVE DUPLICATES
+# =========================
+
+data.drop_duplicates(
+    subset=['track_name', 'artists'],
+    inplace=True
+)
+
+# =========================
+# KEEP MOSTLY ENGLISH SONGS
+# =========================
+
+def is_english(text):
+
+    text = str(text)
+
+    # Allow English letters, numbers and common symbols
+    return bool(
+        re.match(
+            r"^[A-Za-z0-9 .,!?&()'\"-]+$",
+            text
+        )
+    )
+
+# Filter English songs
+data = data[
+    data['track_name'].apply(is_english)
+]
+
+# =========================
+# REMOVE LOW POPULARITY SONGS
+# =========================
+
+data = data[data['popularity'] > 40]
+
+# =========================
+# MOOD LABELING FUNCTION
+# =========================
+
 def assign_mood(row):
 
     # Happy
@@ -37,15 +86,31 @@ def assign_mood(row):
     elif row['energy'] < 0.5 and row['danceability'] < 0.5:
         return "Relaxed"
 
+    # Calm
     else:
         return "Calm"
 
-# Create mood column
+# =========================
+# CREATE MOOD COLUMN
+# =========================
+
 data['mood'] = data.apply(assign_mood, axis=1)
 
-# Save cleaned dataset
-data.to_csv("../dataset/cleaned_dataset.csv", index=False)
+# =========================
+# SAVE CLEANED DATASET
+# =========================
+
+data.to_csv(
+    "../dataset/cleaned_dataset.csv",
+    index=False
+)
+
+# =========================
+# OUTPUT
+# =========================
 
 print("Dataset cleaned successfully")
+
+print("Total songs after cleaning:", len(data))
 
 print(data.head())
